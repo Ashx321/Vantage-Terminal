@@ -118,7 +118,11 @@ export default function StockTable({ rows, showPnL, onRemove, onFieldChange, emp
                 </td>
                 <td className="p-3">
                   <button
-                    onClick={() => onRemove(s.id)}
+                    onClick={() => {
+                      if (window.confirm(`Remove ${s.name} (${s.ticker})? This can't be undone.`)) {
+                        onRemove(s.id)
+                      }
+                    }}
                     title="Remove"
                     className="text-xs border border-border rounded px-2 py-1 hover:bg-card2"
                   >

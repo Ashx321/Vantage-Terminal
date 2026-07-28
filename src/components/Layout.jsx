@@ -26,6 +26,7 @@ export default function Layout() {
       <nav className="flex bg-card border-b border-border overflow-x-auto">
         <NavLink to="/holdings" className={tabClass}>Holdings</NavLink>
         <NavLink to="/watchlist" className={tabClass}>Watchlist</NavLink>
+        <NavLink to="/alerts" className={tabClass}>Alerts</NavLink>
       </nav>
 
       <main className="flex-1 max-w-[1440px] w-full mx-auto p-6">
