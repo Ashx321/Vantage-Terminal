@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* Same design tokens from the redesigned HTML build — carried over so the
+   React version looks identical to what's already been tested and approved,
+   not a random restart of the visual design. */
+@theme {
+  --color-bg: #0A0B0D;
+  --color-card: #131519;
+  --color-card2: #191c22;
+  --color-surface-3: #1F232A;
+  --color-accent: #C9A227;
+  --color-accent-bright: #E6C158;
+  --color-green: #2FBE77;
+  --color-red: #EF5B50;
+  --color-amber: #E0A23B;
+  --color-text: #EDEAE2;
+  --color-muted: #8B8E96;
+  --color-border: #24272E;
+  --color-border-soft: #1B1E24;
+
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+/* Numbers/tickers use the mono face with tabular figures everywhere,
+   same rule as the HTML version — this is what makes columns of prices
+   actually line up instead of jittering as digits change width. */
+.font-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
