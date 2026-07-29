@@ -35,7 +35,7 @@ export default function StockTable({ rows, showPnL, onRemove, onFieldChange, emp
             <th className="p-3" style={{ width: '9%' }}>Change</th>
             {showPnL && <th className="p-3" style={{ width: '12%' }}>Buy / Qty</th>}
             {showPnL && <th className="p-3" style={{ width: '11%' }}>P&amp;L</th>}
-            <th className="p-3" style={{ width: '10%' }}>P/E &middot; ROCE</th>
+            <th className="p-3" style={{ width: '10%' }}>P/E &middot; ROE</th>
             <th className="p-3" style={{ width: '13%' }}>52W Range</th>
             <th className="p-3" style={{ width: '10%' }}>Signal</th>
             <th className="p-3" style={{ width: '7%' }}>Manage</th>
@@ -106,8 +106,8 @@ export default function StockTable({ rows, showPnL, onRemove, onFieldChange, emp
                 )}
                 <td className="p-3 text-[11px] font-num">
                   <div>P/E {s.pe ?? '--'}</div>
-                  <div className={s.roce >= 25 ? 'text-green' : s.roce >= 15 ? 'text-amber' : 'text-red'}>
-                    ROCE {s.roce ?? '--'}%
+                  <div className={s.roe >= 20 ? 'text-green' : s.roe >= 10 ? 'text-amber' : s.roe != null ? 'text-red' : 'text-muted'}>
+                    ROE {s.roe != null ? `${s.roe}%` : '--'}
                   </div>
                 </td>
                 <td className="p-3 text-[10.5px] text-muted font-num">

@@ -3,8 +3,8 @@ import { supabase } from './supabase'
 import { useAuth } from '../contexts/AuthContext'
 
 // Turns a raw table row (snake_case, from Postgres) into the camelCase shape
-// the display components expect, and merges in a live price if one was fetched.
-function toDisplayShape(row, livePrice) {
+// the display components expect, and merges in live price + ratio data.
+function toDisplayShape(row, livePrice, liveRatio) {
   return {
     id: row.id,
     ticker: row.ticker,
@@ -16,8 +16,10 @@ function toDisplayShape(row, livePrice) {
     catalyst: row.catalyst,
     buyPrice: row.buy_price,
     qty: row.qty,
-    pe: row.pe ?? null,
-    roce: row.roce ?? null,
+    pe: liveRatio?.trailingPE != null ? liveRatio.trailingPE.toFixed(1) : null,
+    // Genuinely ROE (Return on Equity), not ROCE — see the note in the Edge
+    // Function. Labelled as ROE in the UI to match what this actually is.
+    roe: liveRatio?.roePct != null ? liveRatio.roePct.toFixed(1) : null,
     low52: livePrice?.low52 ?? 0,
     high52: livePrice?.high52 ?? 0,
     cmp: livePrice?.price ?? 0,
@@ -52,8 +54,12 @@ export function useStockList(table) {
       return
     }
 
-    const livePrices = await fetchLivePrices(data.map((r) => r.yf_symbol))
-    setRows(data.map((r) => toDisplayShape(r, livePrices[r.yf_symbol])))
+    const yfSymbols = data.map((r) => r.yf_symbol)
+    const [livePrices, liveRatios] = await Promise.all([
+      fetchLivePrices(yfSymbols),
+      fetchRatios(yfSymbols),
+    ])
+    setRows(data.map((r) => toDisplayShape(r, livePrices[r.yf_symbol], liveRatios[r.yf_symbol])))
     setError(null)
     setLoading(false)
   }, [user, table])
@@ -142,4 +148,14 @@ async function fetchLivePrices(yfSymbols) {
   })
   if (error || !data?.success) return {}
   return data.quotes ?? {}
+}
+
+// --- Live P/E and ROE, via the same Edge Function -----------------------
+async function fetchRatios(yfSymbols) {
+  if (!yfSymbols.length) return {}
+  const { data, error } = await supabase.functions.invoke('stock-data', {
+    body: { mode: 'ratios', symbols: yfSymbols },
+  })
+  if (error || !data?.success) return {}
+  return data.ratios ?? {}
 }
