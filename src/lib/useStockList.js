@@ -120,7 +120,9 @@ export function useStockList(table) {
 // Calls Yahoo Finance's search (server-side, since browsers can't reach it
 // directly) and returns null if nothing real matches — this is what makes
 // garbage input like "HELLO" get rejected instead of silently accepted.
-async function resolveTicker(rawInput) {
+// Exported so other hooks (e.g. usePriceAlerts) can reuse it instead of
+// duplicating the same logic a second time.
+export async function resolveTicker(rawInput) {
   const input = rawInput.trim()
   if (!input) return null
 
@@ -141,7 +143,8 @@ async function resolveTicker(rawInput) {
 }
 
 // --- Live prices, via the same Edge Function ---------------------------
-async function fetchLivePrices(yfSymbols) {
+// Exported for reuse by usePriceAlerts.
+export async function fetchLivePrices(yfSymbols) {
   if (!yfSymbols.length) return {}
   const { data, error } = await supabase.functions.invoke('stock-data', {
     body: { mode: 'quote', symbols: yfSymbols },

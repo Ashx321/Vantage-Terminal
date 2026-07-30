@@ -1,135 +1,132 @@
-# Vantage Terminal — Phase 1 (Auth + Holdings + Watchlist)
+# Vantage Terminal — React + Supabase rebuild
 
-This is the start of the React + Supabase rebuild of Vantage Terminal. It is
-**not** a full port yet — it's Phase 1: real accounts, a real database, and
-Holdings + Watchlist working end-to-end on the new stack. Everything else
-(Alerts, Intelligence, Scanner, Trade Lab, live prices) comes next, piece by
-piece, once this foundation is confirmed solid.
+The React + Supabase rebuild of Vantage Terminal, built incrementally on top
+of a working foundation rather than all at once.
+
+**Done so far**: real accounts, Holdings (with buy price/qty, live P&L,
+portfolio-level totals), Watchlist, an Alerts feed (both computed signals
+and custom price-target alerts you set yourself), real ticker validation,
+live prices, and live P/E & ROE — all backed by a real database.
+
+**Not yet ported**: Intelligence, Scanner, Trade Lab.
 
 If you get stuck on any step below, copy the exact error message back to
 Claude — much easier to fix a specific error than "it doesn't work."
 
+## Keeping this repo in sync (read this once)
+
+Some updates get applied by pasting code directly into Supabase's dashboard
+editor (Edge Functions, SQL) rather than through git. **That code doesn't
+automatically make it back into this repo** — if you only ever paste into
+the dashboard and never copy the same change into your local files and
+push, this repo silently drifts out of sync with what's actually running.
+This already happened once (the Edge Function and schema files in this repo
+were a version behind what was actually deployed) and has been fixed as
+part of this update — but worth knowing so it's not a surprise again later.
+The rule going forward: any time you paste code into a Supabase dashboard
+editor, also save that exact code into the matching file here and push it.
+
 ## What's real right now vs. what's a placeholder
 
-- **Real**: accounts (sign up/sign in), Holdings and Watchlist stored in an
-  actual database, Row Level Security (your data is genuinely private to
-  your account), duplicate-ticker protection at the database level, real
-  ticker validation and live prices via the `stock-data` Edge Function
-  (see step 4b below — you do need to deploy this one piece yourself).
-- **Placeholder for now**: nothing major — Phase 1 is now functionally
-  complete. Next natural additions: Alerts, and the rest of the original
-  app's tabs (Intelligence, Scanner, Trade Lab), ported piece by piece.
+- **Real**: accounts, Holdings, Watchlist, Row Level Security, duplicate-
+  ticker protection, real ticker validation, live prices, live P/E and ROE,
+  a portfolio summary (Total Invested / Current Value / Overall P&L), an
+  Alerts feed combining computed signals (Buy Zone / Breakout / Big Drop /
+  Surge) with custom price-target alerts you set yourself, and a
+  confirmation prompt before deleting anything.
+- **Honesty note**: the ROE column is genuinely ROE (Return on Equity), not
+  ROCE — Yahoo's free data doesn't expose ROCE.
+- **Known fragility**: live ratios depend on an unofficial Yahoo Finance API
+  that requires session-cookie authentication, implemented but not testable
+  from outside a real deployment — if it stops working, that's external,
+  not a sign anything here is broken.
+- **Next up**: Intelligence, Scanner, Trade Lab, ported piece by piece.
 
 ---
 
-## Setup — do these in order
+## Setup — do these in order (first time only)
 
-### 1. Install Node (skip if `node --version` already prints something)
-Download the **LTS** version from [nodejs.org](https://nodejs.org) and
-install it normally. Then confirm in a terminal:
+### 1. Install Node
 ```
 node --version
 npm --version
 ```
+If that errors instead of printing a version, install the LTS version from
+[nodejs.org](https://nodejs.org).
 
-### 2. Install the project's dependencies
-Open a terminal **inside this folder** and run:
+### 2. Install dependencies
 ```
 npm install
 ```
 
 ### 3. Create your Supabase project
-Go to [supabase.com](https://supabase.com) -> sign up (GitHub login is
-fastest) -> **New project**. Pick any name and a database password (save the
-password somewhere - you likely won't need it again, but just in case).
-Wait ~2 minutes for it to finish provisioning.
+[supabase.com](https://supabase.com) -> sign up -> **New project**.
 
 ### 4. Run the database schema
-In your new Supabase project: **SQL Editor** (left sidebar) -> **New query**.
-Open `supabase/schema.sql` from this folder, copy the whole thing, paste it
-in, click **Run**. You should see "Success. No rows returned." That's it -
-your tables, security rules, and duplicate-protection are all live.
+**SQL Editor** -> **New query** -> paste the entire contents of
+`supabase/schema.sql` -> **Run**. Safe to re-run any time you pull an
+update that changes this file — every statement is written to not fail or
+duplicate data if it's already been run before.
 
-### 4b. Deploy the price/validation function
-This is the piece that makes ticker validation and live prices real (instead
-of accepting anything you type, or showing blank prices). No CLI needed:
+### 5. Deploy the price/validation function
+**Edge Functions** -> **Deploy a new function** -> **Via Editor** -> name
+it exactly `stock-data` -> delete the template code -> paste in the entire
+contents of `supabase/functions/stock-data/index.ts` -> **Deploy**.
 
-1. Left sidebar -> **Edge Functions** -> **Deploy a new function** -> **Via Editor**
-2. Name it exactly `stock-data` (the frontend code expects this exact name)
-3. Delete whatever template code is there, and paste in the entire contents
-   of `supabase/functions/stock-data/index.ts` from this folder
-4. Click **Deploy**
+### 6. Get your API credentials
+**Project Settings** -> **API** -> copy the **Project URL** and the
+**Publishable** key.
 
-That's it — it's now live at `https://your-project.supabase.co/functions/v1/stock-data`,
-called automatically by the app whenever you add a stock or load a page.
-
-### 5. Get your API credentials
-**Project Settings** (gear icon) -> **API**. You need two values:
-- **Project URL**
-- **Project API keys -> anon / public**
-
-### 6. Configure your local environment
-Copy `.env.example` to a new file named `.env.local` in the same folder,
-then paste your real values in:
+### 7. Configure your local environment
+Copy `.env.example` to `.env.local`, fill in the two real values:
 ```
 VITE_SUPABASE_URL=https://your-actual-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-actual-anon-key
+VITE_SUPABASE_ANON_KEY=your-actual-publishable-key
 ```
-`.env.local` is already in `.gitignore` - it will never be committed or
-uploaded anywhere.
 
-### 7. Run it locally
+### 8. Run it locally
 ```
 npm run dev
 ```
-Open the URL it prints (usually `http://localhost:5173`). Sign up for an
-account, confirm your email if prompted, sign in, and try adding a ticker to
-Holdings and to Watchlist.
 
-### 8. Push this to GitHub
-```
-git init
-git add .
-git commit -m "Phase 1: auth, holdings, watchlist on Supabase"
-```
-Then on github.com: **New repository** (don't add a README/gitignore -
-we already have them), copy the URL it gives you, then:
-```
-git remote add origin YOUR_REPO_URL_HERE
-git branch -M main
-git push -u origin main
-```
-
-### 9. Deploy it (Vercel)
-Go to [vercel.com](https://vercel.com) -> sign up with GitHub -> **Add New
-Project** -> pick this repo -> it auto-detects Vite, no config needed. Before
-clicking Deploy, expand **Environment Variables** and add the same two keys
-from step 6 (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`). Then Deploy.
-
-From here on, every `git push` to `main` auto-deploys. That's the "ship
-multiple times a day" workflow - this is the point where it gets easy.
+### 9. Push to GitHub, deploy on Vercel
+Standard flow: `git add . && git commit -m "..." && git push`, then connect
+the repo on [vercel.com](https://vercel.com) with the same two environment
+variables added in its dashboard. Every push after that auto-deploys.
 
 ---
+
+## Updating an existing setup with this version
+
+1. Replace your local `src` folder with the one in this delivery, **and
+   replace this README.md too** (the previous one was out of date)
+2. Re-run the entire `supabase/schema.sql` in the SQL editor (safe — adds
+   the new `price_alerts` table and fixes the grants gap, without touching
+   existing data)
+3. Redeploy `supabase/functions/stock-data/index.ts` the same way as step 5
+   above (also fixes drift — this file was a version behind what's live)
+4. `git add . && git commit -m "Sync repo, add custom price alerts" && git push`
 
 ## Project structure, briefly
 
 ```
 src/
   lib/
-    supabase.js       - Supabase client
-    useStockList.js   - shared data logic for both Holdings & Watchlist
+    supabase.js        - Supabase client
+    useStockList.js     - shared data logic for Holdings & Watchlist
+    usePriceAlerts.js   - custom price-target alerts logic
   contexts/
-    AuthContext.jsx   - session state, used everywhere via useAuth()
+    AuthContext.jsx     - session state, used everywhere via useAuth()
   components/
-    StockTable.jsx    - the ONE shared table (Holdings and Watchlist both use this)
-    stockDisplay.js   - pure helper functions (signal, P&L, formatting)
-    AddStockBox.jsx   - shared "type a ticker, add it" input
-    Layout.jsx        - header + nav
+    StockTable.jsx      - the ONE shared table (Holdings and Watchlist both use this)
+    stockDisplay.js     - pure helper functions (signal, P&L, formatting)
+    AddStockBox.jsx      - shared "type a ticker, add it" input
+    Layout.jsx           - header + nav
   pages/
-    Login.jsx, Holdings.jsx, Watchlist.jsx
+    Login.jsx, Holdings.jsx, Watchlist.jsx, Alerts.jsx
 supabase/
-  schema.sql          - run this once in the Supabase SQL editor
+  schema.sql             - run in the Supabase SQL editor (safe to re-run)
   functions/
     stock-data/
-      index.ts        - deploy via Dashboard -> Edge Functions (step 4b)
+      index.ts           - deploy via Dashboard -> Edge Functions
 ```
