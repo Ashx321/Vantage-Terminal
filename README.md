@@ -6,9 +6,12 @@ of a working foundation rather than all at once.
 **Done so far**: real accounts, Holdings (with buy price/qty, live P&L,
 portfolio-level totals), Watchlist, an Alerts feed (both computed signals
 and custom price-target alerts you set yourself), real ticker validation,
-live prices, and live P/E & ROE — all backed by a real database.
+live prices, live P/E & ROE, a Technical Analysis page (RSI/SMA/MACD with
+a rule-based verdict), and a Fundamentals comparison page (P/E, P/B, ROE,
+Debt/Equity, Dividend Yield across everything you track) — all backed by
+a real database.
 
-**Not yet ported**: Intelligence, Scanner, Trade Lab.
+**Not yet ported**: News, Scanner, Trade Lab.
 
 If you get stuck on any step below, copy the exact error message back to
 Claude — much easier to fix a specific error than "it doesn't work."
@@ -31,11 +34,21 @@ editor, also save that exact code into the matching file here and push it.
 - **Real**: accounts, Holdings, Watchlist, Row Level Security, duplicate-
   ticker protection, real ticker validation, live prices, live P/E and ROE,
   a portfolio summary (Total Invested / Current Value / Overall P&L), an
-  Alerts feed combining computed signals (Buy Zone / Breakout / Big Drop /
-  Surge) with custom price-target alerts you set yourself, and a
-  confirmation prompt before deleting anything.
+  Alerts feed combining computed signals with custom price-target alerts,
+  a confirmation prompt before deleting anything, Technical Analysis
+  (RSI/SMA20/50/200/MACD computed from 6 months of real price history,
+  with a rule-based Bullish/Neutral/Bearish verdict), and a Fundamentals
+  comparison table across everything you're tracking.
+- **Caught before shipping**: the verdict logic initially called a textbook
+  steady uptrend "Bearish" — RSI-overbought was wrongly allowed to override
+  clear trend direction, and floating-point noise near zero was being read
+  as a real signal. Both fixed and re-verified against hand-calculated
+  reference values before this reached you; worth knowing this class of bug
+  exists and was actively checked for, not just assumed away.
 - **Honesty note**: the ROE column is genuinely ROE (Return on Equity), not
-  ROCE — Yahoo's free data doesn't expose ROCE.
+  ROCE — Yahoo's free data doesn't expose ROCE. The technical verdict is a
+  rule-based read of trend direction (moving averages + MACD), not machine
+  learning or a prediction.
 - **Known fragility**: live ratios depend on an unofficial Yahoo Finance API
   that requires session-cookie authentication, implemented but not testable
   from outside a real deployment — if it stops working, that's external,
@@ -98,32 +111,34 @@ variables added in its dashboard. Every push after that auto-deploys.
 
 ## Updating an existing setup with this version
 
-1. Replace your local `src` folder with the one in this delivery, **and
-   replace this README.md too** (the previous one was out of date)
-2. Re-run the entire `supabase/schema.sql` in the SQL editor (safe — adds
-   the new `price_alerts` table and fixes the grants gap, without touching
-   existing data)
-3. Redeploy `supabase/functions/stock-data/index.ts` the same way as step 5
-   above (also fixes drift — this file was a version behind what's live)
-4. `git add . && git commit -m "Sync repo, add custom price alerts" && git push`
+This update touches the frontend AND the Edge Function (new `history` mode
+for technical indicators) — no schema/database change this time:
+
+1. Replace your local `src` folder with the one in this delivery, and
+   replace `README.md` too
+2. Redeploy `supabase/functions/stock-data/index.ts` — Edge Functions ->
+   `stock-data` -> edit -> replace the whole file -> Deploy
+3. `git add . && git commit -m "Add Technical and Fundamentals pages" && git push`
 
 ## Project structure, briefly
 
 ```
 src/
   lib/
-    supabase.js        - Supabase client
-    useStockList.js     - shared data logic for Holdings & Watchlist
-    usePriceAlerts.js   - custom price-target alerts logic
+    supabase.js          - Supabase client
+    useStockList.js      - shared data logic for Holdings & Watchlist
+    usePriceAlerts.js    - custom price-target alerts logic
+    technicalIndicators.js - pure RSI/SMA/MACD math, unit-testable
   contexts/
-    AuthContext.jsx     - session state, used everywhere via useAuth()
+    AuthContext.jsx      - session state, used everywhere via useAuth()
   components/
-    StockTable.jsx      - the ONE shared table (Holdings and Watchlist both use this)
-    stockDisplay.js     - pure helper functions (signal, P&L, formatting)
+    StockTable.jsx       - the ONE shared table (Holdings and Watchlist both use this)
+    stockDisplay.js      - pure helper functions (signal, P&L, formatting)
     AddStockBox.jsx      - shared "type a ticker, add it" input
     Layout.jsx           - header + nav
   pages/
-    Login.jsx, Holdings.jsx, Watchlist.jsx, Alerts.jsx
+    Login.jsx, Holdings.jsx, Watchlist.jsx, Alerts.jsx,
+    Technical.jsx, Fundamentals.jsx
 supabase/
   schema.sql             - run in the Supabase SQL editor (safe to re-run)
   functions/

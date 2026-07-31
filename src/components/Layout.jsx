@@ -27,6 +27,8 @@ export default function Layout() {
         <NavLink to="/holdings" className={tabClass}>Holdings</NavLink>
         <NavLink to="/watchlist" className={tabClass}>Watchlist</NavLink>
         <NavLink to="/alerts" className={tabClass}>Alerts</NavLink>
+        <NavLink to="/technical" className={tabClass}>Technical</NavLink>
+        <NavLink to="/fundamentals" className={tabClass}>Fundamentals</NavLink>
       </nav>
 
       <main className="flex-1 max-w-[1440px] w-full mx-auto p-6">

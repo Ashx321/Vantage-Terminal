@@ -20,6 +20,9 @@ function toDisplayShape(row, livePrice, liveRatio) {
     // Genuinely ROE (Return on Equity), not ROCE — see the note in the Edge
     // Function. Labelled as ROE in the UI to match what this actually is.
     roe: liveRatio?.roePct != null ? liveRatio.roePct.toFixed(1) : null,
+    priceToBook: liveRatio?.priceToBook != null ? liveRatio.priceToBook.toFixed(2) : null,
+    debtToEquity: liveRatio?.debtToEquity != null ? liveRatio.debtToEquity.toFixed(2) : null,
+    divYield: liveRatio?.dividendYieldPct != null ? liveRatio.dividendYieldPct.toFixed(2) : null,
     low52: livePrice?.low52 ?? 0,
     high52: livePrice?.high52 ?? 0,
     cmp: livePrice?.price ?? 0,

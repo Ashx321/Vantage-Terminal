@@ -5,6 +5,8 @@ import Login from './pages/Login'
 import Holdings from './pages/Holdings'
 import Watchlist from './pages/Watchlist'
 import Alerts from './pages/Alerts'
+import Technical from './pages/Technical'
+import Fundamentals from './pages/Fundamentals'
 
 // NOTE ON REACT ROUTER: this uses Declarative Mode (<BrowserRouter> + <Routes>),
 // deliberately. Two high-severity advisories currently show up if you run
@@ -45,6 +47,8 @@ export default function App() {
             <Route path="/holdings" element={<Holdings />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/alerts" element={<Alerts />} />
+            <Route path="/technical" element={<Technical />} />
+            <Route path="/fundamentals" element={<Fundamentals />} />
             <Route path="/" element={<Navigate to="/holdings" replace />} />
           </Route>
         </Routes>
