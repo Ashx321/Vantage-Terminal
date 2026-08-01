@@ -6,12 +6,11 @@ of a working foundation rather than all at once.
 **Done so far**: real accounts, Holdings (with buy price/qty, live P&L,
 portfolio-level totals), Watchlist, an Alerts feed (both computed signals
 and custom price-target alerts you set yourself), real ticker validation,
-live prices, live P/E & ROE, a Technical Analysis page (RSI/SMA/MACD with
-a rule-based verdict), and a Fundamentals comparison page (P/E, P/B, ROE,
-Debt/Equity, Dividend Yield across everything you track) — all backed by
-a real database.
+live prices, live P/E & ROE, Technical Analysis (RSI/SMA/MACD with a
+rule-based verdict), a Fundamentals comparison page, and News (general
+market headlines plus per-company search) — all backed by a real database.
 
-**Not yet ported**: News, Scanner, Trade Lab.
+**Not yet ported**: Scanner, Trade Lab, Settings.
 
 If you get stuck on any step below, copy the exact error message back to
 Claude — much easier to fix a specific error than "it doesn't work."
@@ -33,12 +32,17 @@ editor, also save that exact code into the matching file here and push it.
 
 - **Real**: accounts, Holdings, Watchlist, Row Level Security, duplicate-
   ticker protection, real ticker validation, live prices, live P/E and ROE,
-  a portfolio summary (Total Invested / Current Value / Overall P&L), an
-  Alerts feed combining computed signals with custom price-target alerts,
-  a confirmation prompt before deleting anything, Technical Analysis
-  (RSI/SMA20/50/200/MACD computed from 6 months of real price history,
-  with a rule-based Bullish/Neutral/Bearish verdict), and a Fundamentals
-  comparison table across everything you're tracking.
+  a portfolio summary, an Alerts feed combining computed signals with
+  custom price-target alerts, a confirmation prompt before deleting
+  anything, Technical Analysis (RSI/SMA/MACD from real price history, with
+  a rule-based verdict), a Fundamentals comparison table, and News (real
+  headlines from Google News RSS — both a general market feed and
+  per-company search).
+- **No backend needed for News**: unlike prices/ratios, headlines are
+  fetched straight from the browser via a free public RSS-to-JSON
+  converter — same approach the original HTML app used. If that public
+  service ever goes down, News fails soft to an empty state, same pattern
+  as everything else external in this project.
 - **Caught before shipping**: the verdict logic initially called a textbook
   steady uptrend "Bearish" — RSI-overbought was wrongly allowed to override
   clear trend direction, and floating-point noise near zero was being read
@@ -111,14 +115,11 @@ variables added in its dashboard. Every push after that auto-deploys.
 
 ## Updating an existing setup with this version
 
-This update touches the frontend AND the Edge Function (new `history` mode
-for technical indicators) — no schema/database change this time:
+This update is frontend-only — no Edge Function or schema changes:
 
 1. Replace your local `src` folder with the one in this delivery, and
    replace `README.md` too
-2. Redeploy `supabase/functions/stock-data/index.ts` — Edge Functions ->
-   `stock-data` -> edit -> replace the whole file -> Deploy
-3. `git add . && git commit -m "Add Technical and Fundamentals pages" && git push`
+2. `git add . && git commit -m "Add News page" && git push`
 
 ## Project structure, briefly
 
@@ -129,6 +130,7 @@ src/
     useStockList.js      - shared data logic for Holdings & Watchlist
     usePriceAlerts.js    - custom price-target alerts logic
     technicalIndicators.js - pure RSI/SMA/MACD math, unit-testable
+    news.js               - Google News RSS via rss2json, no backend needed
   contexts/
     AuthContext.jsx      - session state, used everywhere via useAuth()
   components/
@@ -138,7 +140,7 @@ src/
     Layout.jsx           - header + nav
   pages/
     Login.jsx, Holdings.jsx, Watchlist.jsx, Alerts.jsx,
-    Technical.jsx, Fundamentals.jsx
+    Technical.jsx, Fundamentals.jsx, News.jsx
 supabase/
   schema.sql             - run in the Supabase SQL editor (safe to re-run)
   functions/
