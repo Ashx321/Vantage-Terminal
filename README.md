@@ -5,12 +5,13 @@ of a working foundation rather than all at once.
 
 **Done so far**: real accounts, Holdings (with buy price/qty, live P&L,
 portfolio-level totals), Watchlist, an Alerts feed (both computed signals
-and custom price-target alerts you set yourself), real ticker validation,
-live prices, live P/E & ROE, Technical Analysis (RSI/SMA/MACD with a
-rule-based verdict), a Fundamentals comparison page, and News (general
-market headlines plus per-company search) — all backed by a real database.
+and custom price-target alerts), real ticker validation, live prices,
+live P/E & ROE, Technical Analysis, a Fundamentals comparison page, News
+(market headlines plus per-company search), and Paper Trade (virtual
+trading with a real ₹1,00,000 wallet, live prices, atomic buy/sell) — all
+backed by a real database.
 
-**Not yet ported**: Scanner, Trade Lab, Settings.
+**Not yet ported**: Scanner, Day Trade, Settings.
 
 If you get stuck on any step below, copy the exact error message back to
 Claude — much easier to fix a specific error than "it doesn't work."
@@ -34,15 +35,19 @@ editor, also save that exact code into the matching file here and push it.
   ticker protection, real ticker validation, live prices, live P/E and ROE,
   a portfolio summary, an Alerts feed combining computed signals with
   custom price-target alerts, a confirmation prompt before deleting
-  anything, Technical Analysis (RSI/SMA/MACD from real price history, with
-  a rule-based verdict), a Fundamentals comparison table, and News (real
-  headlines from Google News RSS — both a general market feed and
-  per-company search).
-- **No backend needed for News**: unlike prices/ratios, headlines are
-  fetched straight from the browser via a free public RSS-to-JSON
-  converter — same approach the original HTML app used. If that public
-  service ever goes down, News fails soft to an empty state, same pattern
-  as everything else external in this project.
+  anything, Technical Analysis, a Fundamentals comparison table, News, and
+  Paper Trade (virtual ₹1,00,000 wallet, buy/sell at live market prices,
+  average cost-basis tracking, per-position live P&L, trade history).
+- **Paper Trade was tested against a real local Postgres instance**, not
+  just eyeballed — buy/sell math (including averaging cost basis across
+  multiple buys), insufficient-funds rejection, over-sell rejection, and
+  that one user genuinely cannot see another user's wallet or positions
+  were all verified against actual database transactions before this
+  reached you. Buy and sell are single atomic database functions — a
+  network blip mid-trade can't leave your cash debited with no matching
+  position, or vice versa.
+- **No brokerage connection, ever** — prices are real and live, the money
+  isn't. There is no path from this feature to a real trade.
 - **Caught before shipping**: the verdict logic initially called a textbook
   steady uptrend "Bearish" — RSI-overbought was wrongly allowed to override
   clear trend direction, and floating-point noise near zero was being read
@@ -115,11 +120,14 @@ variables added in its dashboard. Every push after that auto-deploys.
 
 ## Updating an existing setup with this version
 
-This update is frontend-only — no Edge Function or schema changes:
+This update touches the database (new Paper Trade tables + functions) and
+the frontend — no Edge Function change this time:
 
-1. Replace your local `src` folder with the one in this delivery, and
+1. Re-run the entire `supabase/schema.sql` in the SQL editor (safe to
+   re-run — only adds the new Paper Trade tables/functions)
+2. Replace your local `src` folder with the one in this delivery, and
    replace `README.md` too
-2. `git add . && git commit -m "Add News page" && git push`
+3. `git add . && git commit -m "Add Paper Trade" && git push`
 
 ## Project structure, briefly
 
@@ -131,6 +139,7 @@ src/
     usePriceAlerts.js    - custom price-target alerts logic
     technicalIndicators.js - pure RSI/SMA/MACD math, unit-testable
     news.js               - Google News RSS via rss2json, no backend needed
+    usePaperTrade.js      - virtual wallet/positions/trades, calls the RPC functions below
   contexts/
     AuthContext.jsx      - session state, used everywhere via useAuth()
   components/
@@ -140,9 +149,10 @@ src/
     Layout.jsx           - header + nav
   pages/
     Login.jsx, Holdings.jsx, Watchlist.jsx, Alerts.jsx,
-    Technical.jsx, Fundamentals.jsx, News.jsx
+    Technical.jsx, Fundamentals.jsx, News.jsx, PaperTrade.jsx
 supabase/
   schema.sql             - run in the Supabase SQL editor (safe to re-run)
+                           includes buy_paper_stock/sell_paper_stock functions
   functions/
     stock-data/
       index.ts           - deploy via Dashboard -> Edge Functions

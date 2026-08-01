@@ -8,6 +8,7 @@ import Alerts from './pages/Alerts'
 import Technical from './pages/Technical'
 import Fundamentals from './pages/Fundamentals'
 import News from './pages/News'
+import PaperTrade from './pages/PaperTrade'
 
 // NOTE ON REACT ROUTER: this uses Declarative Mode (<BrowserRouter> + <Routes>),
 // deliberately. Two high-severity advisories currently show up if you run
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/technical" element={<Technical />} />
             <Route path="/fundamentals" element={<Fundamentals />} />
             <Route path="/news" element={<News />} />
+            <Route path="/paper-trade" element={<PaperTrade />} />
             <Route path="/" element={<Navigate to="/holdings" replace />} />
           </Route>
         </Routes>
