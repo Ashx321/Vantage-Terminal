@@ -31,6 +31,7 @@ export default function Layout() {
         <NavLink to="/fundamentals" className={tabClass}>Fundamentals</NavLink>
         <NavLink to="/news" className={tabClass}>News</NavLink>
         <NavLink to="/paper-trade" className={tabClass}>Paper Trade</NavLink>
+        <NavLink to="/day-trade" className={tabClass}>Day Trade</NavLink>
       </nav>
 
       <main className="flex-1 max-w-[1440px] w-full mx-auto p-6">

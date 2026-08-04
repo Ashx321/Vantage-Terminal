@@ -6,12 +6,11 @@ of a working foundation rather than all at once.
 **Done so far**: real accounts, Holdings (with buy price/qty, live P&L,
 portfolio-level totals), Watchlist, an Alerts feed (both computed signals
 and custom price-target alerts), real ticker validation, live prices,
-live P/E & ROE, Technical Analysis, a Fundamentals comparison page, News
-(market headlines plus per-company search), and Paper Trade (virtual
-trading with a real ₹1,00,000 wallet, live prices, atomic buy/sell) — all
-backed by a real database.
+live P/E & ROE, Technical Analysis, a Fundamentals comparison page, News,
+Paper Trade (virtual ₹1,00,000 wallet), and Day Trade (virtual ₹2,00,000
+wallet with a real daily loss limit) — all backed by a real database.
 
-**Not yet ported**: Scanner, Day Trade, Settings.
+**Not yet ported**: Scanner, Settings.
 
 If you get stuck on any step below, copy the exact error message back to
 Claude — much easier to fix a specific error than "it doesn't work."
@@ -36,18 +35,24 @@ editor, also save that exact code into the matching file here and push it.
   a portfolio summary, an Alerts feed combining computed signals with
   custom price-target alerts, a confirmation prompt before deleting
   anything, Technical Analysis, a Fundamentals comparison table, News, and
-  Paper Trade (virtual ₹1,00,000 wallet, buy/sell at live market prices,
-  average cost-basis tracking, per-position live P&L, trade history).
-- **Paper Trade was tested against a real local Postgres instance**, not
-  just eyeballed — buy/sell math (including averaging cost basis across
-  multiple buys), insufficient-funds rejection, over-sell rejection, and
-  that one user genuinely cannot see another user's wallet or positions
-  were all verified against actual database transactions before this
-  reached you. Buy and sell are single atomic database functions — a
-  network blip mid-trade can't leave your cash debited with no matching
-  position, or vice versa.
-- **No brokerage connection, ever** — prices are real and live, the money
-  isn't. There is no path from this feature to a real trade.
+  two trading simulators — Paper Trade (₹1,00,000, swing-style) and Day
+  Trade (₹2,00,000, with a real daily loss limit).
+- **Day Trade's risk control is real, not decorative**: the original app's
+  Day Trade had an elaborately-branded "Predator Engine" that was mostly
+  marketing. This instead does one thing honestly — once realized losses
+  hit ₹4,000 (2% of the starting balance) in a calendar day, new buys are
+  blocked until the next day. Selling to close a position is NEVER
+  blocked, even while the limit is active — the limit stops you taking on
+  new risk after a bad day, it never traps you in a losing position.
+- **Both simulators were tested against a real local Postgres instance**,
+  not just read — buy/sell math, average cost-basis tracking, insufficient-
+  funds and over-sell rejection, and (for Day Trade specifically) the loss
+  limit correctly triggering, correctly never blocking sells, and correctly
+  resetting on a new calendar day were all verified against actual database
+  transactions. One real formatting bug was caught and fixed in the
+  process — Postgres doesn't support printf-style `%.2f` in error messages
+  the way some other SQL dialects do; it printed the literal text ".2f"
+  until corrected.
 - **Caught before shipping**: the verdict logic initially called a textbook
   steady uptrend "Bearish" — RSI-overbought was wrongly allowed to override
   clear trend direction, and floating-point noise near zero was being read
@@ -120,14 +125,14 @@ variables added in its dashboard. Every push after that auto-deploys.
 
 ## Updating an existing setup with this version
 
-This update touches the database (new Paper Trade tables + functions) and
+This update touches the database (new Day Trade tables + functions) and
 the frontend — no Edge Function change this time:
 
 1. Re-run the entire `supabase/schema.sql` in the SQL editor (safe to
-   re-run — only adds the new Paper Trade tables/functions)
+   re-run — only adds the new Day Trade tables/functions)
 2. Replace your local `src` folder with the one in this delivery, and
    replace `README.md` too
-3. `git add . && git commit -m "Add Paper Trade" && git push`
+3. `git add . && git commit -m "Add Day Trade" && git push`
 
 ## Project structure, briefly
 
@@ -140,6 +145,7 @@ src/
     technicalIndicators.js - pure RSI/SMA/MACD math, unit-testable
     news.js               - Google News RSS via rss2json, no backend needed
     usePaperTrade.js      - virtual wallet/positions/trades, calls the RPC functions below
+    useDayTrade.js        - same pattern, with the daily loss limit surfaced
   contexts/
     AuthContext.jsx      - session state, used everywhere via useAuth()
   components/
@@ -149,10 +155,10 @@ src/
     Layout.jsx           - header + nav
   pages/
     Login.jsx, Holdings.jsx, Watchlist.jsx, Alerts.jsx,
-    Technical.jsx, Fundamentals.jsx, News.jsx, PaperTrade.jsx
+    Technical.jsx, Fundamentals.jsx, News.jsx, PaperTrade.jsx, DayTrade.jsx
 supabase/
   schema.sql             - run in the Supabase SQL editor (safe to re-run)
-                           includes buy_paper_stock/sell_paper_stock functions
+                           includes buy/sell RPC functions for both simulators
   functions/
     stock-data/
       index.ts           - deploy via Dashboard -> Edge Functions
